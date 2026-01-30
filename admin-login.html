@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Admin Login | Easypoint BD</title>
+
+<!-- Bootstrap -->
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+
+<style>
+body{
+  background: linear-gradient(135deg,#667eea,#764ba2);
+  height:100vh;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  font-family:'Montserrat',sans-serif;
+}
+.login-box{
+  background:#ffffff;
+  padding:40px;
+  border-radius:18px;
+  width:100%;
+  max-width:420px;
+  box-shadow:0 25px 50px rgba(0,0,0,.3);
+}
+.login-box h3{
+  font-weight:700;
+}
+.form-control{
+  border-radius:12px;
+}
+.btn-primary{
+  border-radius:12px;
+  font-weight:600;
+}
+</style>
+</head>
+
+<body>
+
+<div class="login-box text-center">
+  <h3 class="mb-4">Admin Login</h3>
+
+  <!-- Admin Email -->
+  <input 
+    type="email" 
+    id="adminEmail" 
+    class="form-control mb-3"
+    placeholder="Admin Email"
+  >
+
+  <!-- Admin Password -->
+  <input 
+    type="password" 
+    id="adminPassword" 
+    class="form-control mb-3"
+    placeholder="Password"
+  >
+
+  <button class="btn btn-primary w-100" onclick="login()">
+    Enter Dashboard
+  </button>
+
+  <p id="error" class="text-danger mt-3"></p>
+</div>
+
+<!-- Firebase -->
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-app.js";
+import { getAuth, signInWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-auth.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyApZK1uKspkk_yu8mCKDH44rDnmJzjvv00",
+  authDomain: "myshop-f7a03.firebaseapp.com",
+  projectId: "myshop-f7a03",
+  storageBucket: "myshop-f7a03.appspot.com",
+  messagingSenderId: "793564064034",
+  appId: "1:793564064034:web:fcc5230ff28a5ee8005d7b"
+};
+
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+
+function showError(msg){
+  document.getElementById("error").innerText = msg;
+}
+
+window.login = function() {
+  const email = document.getElementById("adminEmail").value.trim();
+  const password = document.getElementById("adminPassword").value;
+
+  if(!email){
+    showError("Please enter admin email!");
+    return;
+  }
+  if(!password){
+    showError("Please enter password!");
+    return;
+  }
+
+  signInWithEmailAndPassword(auth, email, password)
+    .then((userCredential) => {
+      const user = userCredential.user;
+
+      // ✅ Optional: Only allow specific admin emails
+      const adminEmails = [
+        "admin@easypointbd.com",
+        "youradmin@gmail.com"
+      ];
+      if(!adminEmails.includes(user.email)){
+        showError("Access denied: Admin only");
+        auth.signOut();
+        return;
+      }
+
+      // ✅ Redirect to dashboard
+      window.location.href = "dashboard.html";
+    })
+    .catch((error) => {
+      showError("Invalid email or password!");
+      console.error(error);
+    });
+};
+</script>
+
+</body>
+</html>

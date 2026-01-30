@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Easypoint BD | MyShop</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<!-- Bootstrap -->
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+<link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet">
+<link rel="stylesheet" href="css/style.css">
+<style>
+body{
+  background: linear-gradient(135deg,#1d2671,#c33764);
+  min-height:100vh;
+  padding-top:80px;
+  font-family:'Poppins',sans-serif;
+}
+.card{
+  border-radius:18px;
+  box-shadow:0 20px 40px rgba(0,0,0,.25);
+}
+.form-control{
+  border-radius:12px;
+}
+.btn-success{
+  border-radius:14px;
+  font-weight:600;
+  padding:12px;
+}
+.summary-item{
+  display:flex;
+  justify-content:space-between;
+  padding:10px 0;
+  border-bottom:1px dashed #ddd;
+}
+.total-box{
+  font-size:1.3rem;
+  font-weight:700;
+}
+
+ /* ================= NAVBAR ================= */
+.navbar {
+  background: #1a1a1a;
+  padding: 15px 20px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+  transition: all 0.3s ease;
+}
+.navbar.scrolled {
+  background: #111;
+}
+.navbar-brand {
+  font-size: 1.8rem;
+  font-weight: 700;
+  color: #ff416c;
+}
+.navbar-nav .nav-link {
+  color: #fff;
+  margin-left: 15px;
+  transition: all 0.3s ease;
+}
+.navbar-nav .nav-link:hover,
+.navbar-nav .nav-link.active {
+  color: #ff416c;
+  transform: scale(1.08);
+}
+</style>
+</head>
+
+<body>
+<!-- NAVBAR -->
+<nav class="navbar navbar-expand-lg navbar-dark fixed-top">
+  <div class="container">
+    <a class="navbar-brand" href="index.html">
+      <i class="bi bi-bag-check-fill me-1"></i> Easypoint BD
+    </a>
+    
+    <button class="navbar-toggler" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+      <span class="navbar-toggler-icon"></span>
+    </button>
+    
+    <div class="collapse navbar-collapse" id="navbarNav">
+      <ul class="navbar-nav ms-auto">
+        <li class="nav-item"><a class="nav-link" href="index.html">Home</a></li>
+        <li class="nav-item"><a class="nav-link" href="cart.html">Cart</a></li>
+        <li class="nav-item"><a class="nav-link" href="checkout.html">Checkout</a></li>
+        <li class="nav-item"><a class="nav-link" href="user-dashboard.html">Account</a></li>
+      </ul>
+    </div>
+  </div>
+</nav>
+
+<!-- CHECKOUT -->
+<div class="container">
+  <div class="row g-4">
+
+    <!-- BILLING -->
+    <div class="col-lg-6">
+      <div class="card p-4">
+        <h4 class="mb-4">Billing Information</h4>
+
+        <form onsubmit="placeOrder(event)">
+          <input id="customerName" class="form-control mb-3" type="text" placeholder="Full Name" required>
+          <input id="customerEmail" class="form-control mb-3" type="email" placeholder="Email Address" required>
+          <input id="customerPhone" class="form-control mb-3" type="text" placeholder="Phone Number" required>
+          <textarea id="customerAddress" class="form-control mb-4" rows="3" placeholder="Delivery Address" required></textarea>
+
+          <button type="submit" class="btn btn-success w-100">
+            <i class="bi bi-check-circle me-1"></i> Confirm Order
+          </button>
+        </form>
+      </div>
+    </div>
+
+    <!-- TOAST ALERT -->
+    <div class="toast-container position-fixed top-0 end-0 p-3">
+      <div id="shopToast" class="toast align-items-center text-bg-success border-0" role="alert">
+        <div class="d-flex">
+          <div class="toast-body" id="toastMsg">Message</div>
+          <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ORDER SUMMARY -->
+    <div class="col-lg-6">
+      <div class="card p-4">
+        <h4 class="mb-4">Order Summary</h4>
+
+        <div id="orderItems"></div>
+
+        <div class="text-end mt-3 total-box">
+          Total: BDT <span id="orderTotal">0.00</span>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- JS -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+
+<!-- Firebase + Checkout JS -->
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-app.js";
+  import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-auth.js";
+  import {
+    getFirestore,
+    collection,
+    addDoc,
+    serverTimestamp
+  } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-firestore.js";
+  
+  /* ---------------- FIREBASE ---------------- */
+  const firebaseConfig = {
+    apiKey: "AIzaSyApZK1uKspkk_yu8mCKDH44rDnmJzjvv00",
+    authDomain: "myshop-f7a03.firebaseapp.com",
+    projectId: "myshop-f7a03",
+    storageBucket: "myshop-f7a03.firebasestorage.app",
+    messagingSenderId: "793564064034",
+    appId: "1:793564064034:web:fcc5230ff28a5ee8005d7b"
+  };
+  
+  const app = initializeApp(firebaseConfig);
+  const auth = getAuth(app);
+  const db = getFirestore(app);
+  
+  let currentUser = null;
+  
+  /* ---------------- AUTH GUARD ---------------- */
+  onAuthStateChanged(auth, user => {
+    if (!user) {
+      location.href = "signin.html";
+    } else {
+      currentUser = user;
+    }
+  });
+  
+  /* ---------------- CART ---------------- */
+  let cart = JSON.parse(localStorage.getItem("cart")) || [];
+  
+  if (cart.length === 0) {
+    showToast("Your cart is empty", "danger");
+    setTimeout(() => location.href = "index.html", 1000);
+  }
+  
+  const orderItems = document.getElementById("orderItems");
+  const orderTotal = document.getElementById("orderTotal");
+  
+  /* ---------------- PRICE FORMAT ---------------- */
+  function formatPrice(num) {
+    return Number.isInteger(num) ? num : num.toFixed(2);
+  }
+  
+  /* ---------------- RENDER CHECKOUT ---------------- */
+  function renderCheckout() {
+    let total = 0;
+    orderItems.innerHTML = "";
+    
+    cart.forEach(item => {
+      const itemTotal = item.price * item.quantity;
+      total += itemTotal;
+      
+      orderItems.innerHTML += `
+      <div class="summary-item">
+        <span>${item.name} × ${item.quantity}</span>
+        <span>৳${formatPrice(itemTotal)}</span>
+      </div>`;
+    });
+    
+    orderTotal.textContent = formatPrice(total);
+  }
+  
+  renderCheckout();
+  
+  /* ---------------- PLACE ORDER ---------------- */
+  async function placeOrder(e) {
+    e.preventDefault();
+    
+    const name = customerName.value.trim();
+    const email = customerEmail.value.trim();
+    const phone = customerPhone.value.trim();
+    const address = customerAddress.value.trim();
+    
+    if (!name || !email || !phone || !address) {
+      showToast("Please fill all fields", "warning");
+      return;
+    }
+    
+    let total = 0;
+    cart.forEach(i => total += i.price * i.quantity);
+    
+    try {
+      await addDoc(collection(db, "orders"), {
+        uid: currentUser.uid,
+        customer: name,
+        email: currentUser.email,
+        phone,
+        address,
+        items: cart,
+        total,
+        status: "Pending",
+        date: new Date().toLocaleString(),
+        createdAt: serverTimestamp()
+      });
+      
+      localStorage.removeItem("cart");
+      showToast("Order placed successfully!", "success");
+      
+      setTimeout(() => location.href = "index.html", 2000);
+    } catch (err) {
+      console.error(err);
+      showToast("Order failed!", "danger");
+    }
+  }
+  
+  window.placeOrder = placeOrder;
+  
+  /* ---------------- TOAST ---------------- */
+  function showToast(message, type = "success") {
+    const toastEl = document.getElementById("shopToast");
+    const toastMsg = document.getElementById("toastMsg");
+    
+    toastEl.className = `toast align-items-center text-bg-${type} border-0`;
+    toastMsg.textContent = message;
+    
+    new bootstrap.Toast(toastEl, { delay: 2000 }).show();
+  }
+</script>
+
+</body>
+</html>

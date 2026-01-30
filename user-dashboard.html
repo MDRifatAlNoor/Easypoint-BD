@@ -1,0 +1,519 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>User Dashboard | Easypoint BD</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+body{
+  background:#f4f6fb;
+  font-family:Montserrat,sans-serif;
+}
+.card{
+  border:none;
+  border-radius:16px;
+  box-shadow:0 15px 40px rgba(0,0,0,.08);
+}
+.order-card{
+  border-left:6px solid #ff416c;
+  position:relative;
+}
+.product-badge{
+  background:#eef2ff;
+  color:#333;
+  border-radius:20px;
+  padding:6px 12px;
+  font-size:14px;
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+}
+.product-badge button{
+  background:transparent;
+  border:none;
+  color:#ff4b2b;
+  cursor:pointer;
+  font-size:16px;
+}
+.product-badge button:hover{
+  color:#ff0000;
+}
+.logout-btn, .login-btn{
+  background:#ff416c;
+  border:none;
+}
+.logout-btn:hover, .login-btn:hover{
+  background:#ff4b2b;
+}
+.edit-btn{
+  background:#4f46e5;
+  border:none;
+}
+.edit-btn:hover{
+  background:#4338ca;
+}
+.profile-icon{
+  width:70px;
+  height:70px;
+  border-radius:50%;
+  background:#4f46e5;
+  color:#fff;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  font-size:28px;
+  font-weight:700;
+}
+.profile-card{
+  cursor:pointer;
+  transition:.3s;
+}
+.profile-card:hover{
+  transform:translateY(-4px);
+  box-shadow:0 20px 45px rgba(0,0,0,.12);
+}
+.shop-btn{
+  display:block;
+  margin:20px auto 0;
+  background:#4f46e5;
+  color:#fff;
+  border:none;
+}
+.shop-btn:hover{
+  background:#4338ca;
+}
+
+/* Notification Styles */
+#notificationContainer {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  z-index: 9999;
+}
+.notification {
+  background:#4f46e5;
+  color:#fff;
+  padding:12px 20px;
+  border-radius:8px;
+  margin-top:10px;
+  box-shadow:0 5px 15px rgba(0,0,0,0.2);
+  opacity:0;
+  transform: translateX(100%);
+  transition: all 0.4s ease;
+}
+.notification.show {
+  opacity:1;
+  transform: translateX(0);
+}
+.notification.success {
+  background:#28a745;
+}
+.notification.error {
+  background:#dc3545;
+}
+.notification.info {
+  background:#0dcaf0;
+}
+.alert-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.45);
+  display: none;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+  backdrop-filter: blur(6px);
+}
+
+.alert-box {
+  background: linear-gradient(135deg,#1e1e2f,#2c2c4d);
+  color: #fff;
+  width: 90%;
+  max-width: 360px;
+  padding: 25px;
+  border-radius: 18px;
+  text-align: center;
+  animation: pop 0.3s ease;
+  box-shadow: 0 20px 50px rgba(0,0,0,0.4);
+}
+
+.alert-icon {
+  font-size: 40px;
+  margin-bottom: 10px;
+}
+
+.alert-actions {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 25px;
+  gap: 12px;
+}
+
+.alert-actions button {
+  flex: 1;
+  border: none;
+  padding: 10px;
+  border-radius: 10px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.btn-cancel {
+  background: #444;
+  color: #fff;
+}
+
+.btn-ok {
+  background: linear-gradient(135deg,#00c6ff,#0072ff);
+  color: white;
+}
+
+.btn-ok:hover {
+  opacity: 0.9;
+}
+
+@keyframes pop {
+  from {
+    transform: scale(0.8);
+    opacity: 0;
+  }
+  to {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+</style>
+</head>
+<body>
+
+<div id="notificationContainer"></div>
+
+<div class="container py-5">
+
+  <!-- Header -->
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <h3 class="fw-bold">User Dashboard</h3>
+    <div class="d-flex gap-2">
+      <button class="btn edit-btn text-white btn-sm" data-bs-toggle="modal" data-bs-target="#editProfileModal">
+        Edit Profile
+      </button>
+    </div>
+  </div>
+
+  <div class="row g-4">
+
+    <!-- PROFILE (CLICKABLE) -->
+    <div class="col-lg-4">
+      <div class="card p-4 text-center profile-card" data-bs-toggle="modal" data-bs-target="#profileViewModal">
+        <div class="profile-icon mx-auto mb-3" id="profileIcon">U</div>
+        <h5 id="profileName">User</h5>
+        <p class="text-muted mb-0">View Profile</p>
+      </div>
+    </div>
+
+    <!-- ORDERS -->
+    <div class="col-lg-8">
+      <h4 class="fw-bold mb-3">My Orders</h4>
+      <div id="ordersContainer"></div>
+      <button class="btn shop-btn" onclick="goToShop()">Shop Now</button>
+    </div>
+
+  </div>
+
+</div>
+
+<!-- PROFILE VIEW MODAL -->
+<div class="modal fade" id="profileViewModal" tabindex="-1">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content rounded-4 p-3">
+      <div class="modal-header">
+        <h5 class="modal-title fw-bold">My Profile</h5>
+        <button class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body text-center">
+        <div class="profile-icon mx-auto mb-3" id="viewIcon"></div>
+        <h5 id="viewName"></h5>
+        <p class="text-muted" id="viewEmail"></p>
+        <p><strong>Phone:</strong> <span id="viewPhone"></span></p>
+        <p><strong>Address:</strong> <span id="viewAddress"></span></p>
+        <div class="d-flex justify-content-center gap-2 mt-3">
+          <button class="btn logout-btn btn-sm" id="logoutBtn">Logout</button>
+          
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+<!-- PRODUCT IMAGE MODAL -->
+<div class="modal fade" id="productModal" tabindex="-1">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content p-3 text-center">
+      <h5 id="productTitle"></h5>
+      <img id="productImg"
+           class="img-fluid rounded"
+           style="max-height:550px">
+      <button class="btn btn-secondary mt-3" data-bs-dismiss="modal">
+        Close
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- EDIT PROFILE MODAL -->
+<div class="modal fade" id="editProfileModal" tabindex="-1">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content rounded-4">
+      <div class="modal-header">
+        <h5 class="modal-title fw-bold">Edit Profile</h5>
+        <button class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <input id="editName" class="form-control mb-3" placeholder="Full Name">
+        <input id="editPhone" class="form-control mb-3" placeholder="Phone Number">
+        <textarea id="editAddress" class="form-control" rows="3" placeholder="Address"></textarea>
+      </div>
+      
+<div id="loadingSkeleton">
+  <div class="card p-4 mb-3 placeholder-glow">
+    <span class="placeholder col-6 mb-2"></span>
+    <span class="placeholder col-4"></span>
+  </div>
+  <div class="card p-4 mb-3 placeholder-glow">
+    <span class="placeholder col-7 mb-2"></span>
+    <span class="placeholder col-5"></span>
+  </div>
+</div>
+
+<div id="ordersContainer"></div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancel</button>
+        <button class="btn btn-primary btn-sm" onclick="saveProfile()">Save Changes</button>
+      </div>
+    </div>
+  </div>
+</div>
+<div id="alertOverlay" class="alert-overlay">
+  <div class="alert-box">
+    <div class="alert-icon">⚠️</div>
+    <h4 id="alertTitle">Confirm</h4>
+    <p id="alertMessage">Are you sure?</p>
+
+    <div class="alert-actions">
+      <button class="btn-cancel" id="alertCancel">Cancel</button>
+      <button class="btn-ok" id="alertOk">OK</button>
+    </div>
+  </div>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-app.js";
+import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-auth.js";
+import { getFirestore, doc, getDoc, setDoc, collection, query, where, getDocs, deleteDoc } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-firestore.js";
+
+/* ================= FIREBASE CONFIG ================= */
+const firebaseConfig = {
+  apiKey: "AIzaSyApZK1uKspkk_yu8mCKDH44rDnmJzjvv00",
+  authDomain: "myshop-f7a03.firebaseapp.com",
+  projectId: "myshop-f7a03",
+  storageBucket: "myshop-f7a03.firebasestorage.app",
+  messagingSenderId: "793564064034",
+  appId: "1:793564064034:web:fcc5230ff28a5ee8005d7b"
+};
+
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const db = getFirestore(app);
+
+/* ================= GLOBALS ================= */
+let currentUID = "";
+let currentUserEmail = "";
+let profile = {};
+let _userOrders = [];
+const container = document.getElementById("ordersContainer");
+const profileCard = document.querySelector(".profile-card");
+
+/* ================= AUTH ================= */
+onAuthStateChanged(auth, async (user) => {
+  if (!user) return window.location.href = "account.html";
+
+  currentUID = user.uid;
+  currentUserEmail = user.email;
+
+  // Hide profile card until actual profile loads
+  profileCard.style.visibility = "hidden";
+
+  await loadProfile();      // fetch profile from Firestore
+  await renderOrders();     // fetch orders
+
+  // Show profile card after data is ready
+  profileCard.style.visibility = "visible";
+});
+
+/* ================= LOGOUT ================= */
+logoutBtn.addEventListener("click", async () => {
+  await signOut(auth);
+  window.location.href = "account.html";
+});
+
+/* ================= PROFILE ================= */
+async function loadProfile() {
+  const ref = doc(db, "users", currentUID);
+  const snap = await getDoc(ref);
+
+  profile = snap.exists() ? snap.data() : { email: currentUserEmail };
+  if (!snap.exists()) await setDoc(ref, profile);
+
+  renderProfile();
+}
+
+function renderProfile() {
+  const name = profile.name || currentUserEmail.split("@")[0];
+
+  profileName.innerText = name;
+  profileIcon.innerText = name[0].toUpperCase();
+
+  viewName.innerText = name;
+  viewEmail.innerText = currentUserEmail;
+  viewPhone.innerText = profile.phone || "N/A";
+  viewAddress.innerText = profile.address || "N/A";
+  viewIcon.innerText = name[0].toUpperCase();
+
+  editName.value = profile.name || "";
+  editPhone.value = profile.phone || "";
+  editAddress.value = profile.address || "";
+}
+
+window.saveProfile = async () => {
+  profile = {
+    name: editName.value.trim(),
+    phone: editPhone.value.trim(),
+    address: editAddress.value.trim(),
+    email: currentUserEmail
+  };
+  await setDoc(doc(db, "users", currentUID), profile, { merge: true });
+  renderProfile();
+  bootstrap.Modal.getInstance(editProfileModal).hide();
+};
+
+/* ================= ORDERS ================= */
+function formatOrderDate(ts) {
+  const date = ts?.toDate ? ts.toDate() : new Date(ts);
+  return date.toLocaleString("en-GB", {
+    day: "2-digit", month: "short", year: "numeric",
+    hour: "2-digit", minute: "2-digit", hour12: true
+  });
+}
+
+async function renderOrders() {
+  container.innerHTML = `<div class="card p-4 text-center"><div class="spinner-border"></div></div>`;
+  try {
+    const q = query(collection(db, "orders"), where("uid", "==", currentUID));
+    const snapshot = await getDocs(q);
+
+    if (snapshot.empty) {
+      container.innerHTML = `<div class="card p-4 text-center">No orders found</div>`;
+      _userOrders = [];
+      return;
+    }
+
+    let html = "";
+    let grandTotal = 0;
+    let globalIndex = 0;
+    _userOrders = [];
+
+    for (const docSnap of snapshot.docs) {
+      const order = docSnap.data();
+      const orderId = docSnap.id;
+      const items = order.items || [];
+      if (!items.length) { await deleteDoc(doc(db, "orders", orderId)); continue; }
+
+      _userOrders.push({ id: orderId, items });
+
+      let orderTotal = 0;
+      let itemsHTML = "";
+      items.forEach(item => {
+        const qty = item.quantity || 1;
+        const price = item.price || 0;
+        const total = qty * price;
+        orderTotal += total;
+
+        itemsHTML += `
+          <div class="product-badge mb-2" onclick="showProduct('${item.name}', '${item.image || ""}')">
+            <div>
+              <strong>${item.name}</strong><br>
+              <small class="text-muted">৳${price} × ${qty} = ৳${total}</small>
+              <div class="mt-1 small text-muted">📝 ${item.note || "No note"}</div>
+            </div>
+            <button onclick="event.stopPropagation(); deleteProduct(${globalIndex})">🗑️</button>
+          </div>
+        `;
+        globalIndex++;
+      });
+
+      html += `
+        <div class="card order-card p-4 mb-3">
+          <div class="small text-muted mb-2">🕒 Order placed: ${formatOrderDate(order.createdAt)}</div>
+          ${itemsHTML}
+          <hr>
+          <strong>Order Total: ৳${orderTotal.toFixed(0)}</strong>
+        </div>
+      `;
+      grandTotal += orderTotal;
+    }
+
+    html += `<div class="card p-3 text-end fw-bold">Grand Total: ৳${grandTotal.toFixed(0)}</div>`;
+    container.innerHTML = html;
+
+  } catch (err) {
+    console.error(err);
+    container.innerHTML = `<div class="card p-4 text-center">Failed to load orders</div>`;
+  }
+}
+
+/* ================= DELETE PRODUCT ================= */
+window.deleteProduct = async function(index) {
+  let count = 0;
+  for (const order of _userOrders) {
+    for (let i = 0; i < order.items.length; i++) {
+      if (count === index) {
+        customConfirm("Remove this product?", async ok => {
+          if (!ok) return;
+
+          const updatedItems = [...order.items];
+          updatedItems.splice(i, 1);
+          const ref = doc(db, "orders", order.id);
+
+          if (!updatedItems.length) await deleteDoc(ref);
+          else await setDoc(ref, { items: updatedItems }, { merge: true });
+
+          renderOrders();
+        });
+        return;
+      }
+      count++;
+    }
+  }
+};
+
+/* ================= UI HELPERS ================= */
+window.goToShop = () => window.location.href = "index.html";
+window.showProduct = (name, img) => {
+  productTitle.innerText = name;
+  productImg.src = img;
+  new bootstrap.Modal(productModal).show();
+};
+
+function customConfirm(message, callback) {
+  alertMessage.innerText = message;
+  alertOverlay.style.display = "flex";
+
+  alertOk.onclick = () => { alertOverlay.style.display = "none"; callback(true); };
+  alertCancel.onclick = () => { alertOverlay.style.display = "none"; callback(false); };
+}
+</script>
+</body>
+</html>

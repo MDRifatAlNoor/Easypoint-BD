@@ -1,0 +1,459 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Admin Dashboard | Easypoint BD</title>
+
+<!-- Bootstrap -->
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+<link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" rel="stylesheet">
+
+<style>
+body{
+  background:#f1f4fb;
+  font-family:'Poppins',sans-serif;
+}
+.dashboard-header{
+  background:linear-gradient(135deg,#667eea,#764ba2);
+  color:#fff;
+  padding:25px;
+  border-radius:20px;
+  margin-bottom:30px;
+}
+.stat-card{
+  border:none;
+  border-radius:18px;
+  box-shadow:0 15px 35px rgba(0,0,0,.12);
+  transition:.3s;
+}
+.stat-card:hover{ transform:translateY(-5px); }
+.orders-card{
+  border:none;
+  border-radius:20px;
+  box-shadow:0 15px 40px rgba(0,0,0,.1);
+}
+.customer-link{
+  color:#0d6efd;
+  cursor:pointer;
+  font-weight:600;
+}
+.toast-container{
+  position:fixed;
+  top:20px;
+  right:20px;
+  z-index:1055;
+}
+.alert-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.45);
+  display: none;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+  backdrop-filter: blur(6px);
+}
+
+.alert-box {
+  background: linear-gradient(135deg,#1e1e2f,#2c2c4d);
+  color: #fff;
+  width: 90%;
+  max-width: 360px;
+  padding: 25px;
+  border-radius: 18px;
+  text-align: center;
+  animation: pop 0.3s ease;
+  box-shadow: 0 20px 50px rgba(0,0,0,0.4);
+}
+
+.alert-icon {
+  font-size: 40px;
+  margin-bottom: 10px;
+}
+
+.alert-actions {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 25px;
+  gap: 12px;
+}
+
+.alert-actions button {
+  flex: 1;
+  border: none;
+  padding: 10px;
+  border-radius: 10px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.btn-cancel {
+  background: #444;
+  color: #fff;
+}
+
+.btn-ok {
+  background: linear-gradient(135deg,#00c6ff,#0072ff);
+  color: white;
+}
+
+.btn-ok:hover {
+  opacity: 0.9;
+}
+
+@keyframes pop {
+  from {
+    transform: scale(0.8);
+    opacity: 0;
+  }
+  to {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+</style>
+</head>
+
+<body>
+
+<div class="container py-5">
+
+  <!-- HEADER -->
+  <div class="dashboard-header d-flex justify-content-between align-items-center">
+    <div>
+      <h2 class="mb-1">Admin Dashboard</h2>
+      <p class="mb-0">Manage orders & customers</p>
+    </div>
+    <button class="btn btn-danger btn-sm" onclick="logout()">
+      <i class="bi bi-box-arrow-right"></i> Logout
+    </button>
+  </div>
+
+  <!-- STATS -->
+  <div class="row g-4 mb-4">
+    <div class="col-md-6">
+      <div class="card stat-card p-4 text-center">
+        <i class="bi bi-bag-check-fill fs-2 text-primary"></i>
+        <h6>Total Orders</h6>
+        <h2 id="totalOrders">0</h2>
+      </div>
+    </div>
+
+    <div class="col-md-6">
+      <div class="card stat-card p-4 text-center">
+        <i class="bi bi-currency-dollar fs-2 text-success"></i>
+        <h6>Total Revenue</h6>
+        <h2>(BDT)<span id="totalRevenue">0</span></h2>
+      </div>
+    </div>
+  </div>
+
+  <!-- ORDERS -->
+  <div class="card orders-card p-4">
+    <h4 class="mb-3">Recent Orders</h4>
+
+    <div class="table-responsive">
+      <table class="table align-middle text-center">
+        <thead class="table-dark">
+          <tr>
+            <th>#</th>
+            <th>Customer</th>
+            <th>Total</th>
+            <th>Status</th>
+            <th>Date</th>
+            <th>Action</th>
+          </tr>
+        </thead>
+        <tbody id="ordersTable"></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div class="toast-container">
+  <div id="toast" class="toast align-items-center text-bg-success border-0">
+    <div class="d-flex">
+      <div class="toast-body" id="toastMsg"></div>
+      <button class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
+    </div>
+  </div>
+</div>
+
+<!-- CUSTOMER MODAL -->
+<div class="modal fade" id="customerModal" tabindex="-1">
+  <div class="modal-dialog modal-lg modal-dialog-centered">
+    <div class="modal-content p-4">
+      <div class="modal-header border-0">
+        <h5 class="modal-title">Customer Details</h5>
+        <button class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <p><strong>Name:</strong> <span id="cName"></span></p>
+        <p><strong>Email:</strong> <span id="cEmail"></span></p>
+        <p><strong>Phone:</strong> <span id="cPhone"></span></p>
+        <p><strong>Address:</strong> <span id="cAddress"></span></p>
+        <hr>
+        <h6>Ordered Items</h6>
+        <ul id="cItems"></ul>
+      </div>
+    </div>
+  </div>
+</div>
+<div class="modal fade" id="productModal" tabindex="-1">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content p-3 text-center">
+
+      <h5 id="productTitle"></h5>
+
+      <img id="productImg"
+           class="img-fluid rounded"
+           style="max-height:550px">
+
+      <button class="btn btn-secondary mt-3"
+              data-bs-dismiss="modal">
+        Close
+      </button>
+    </div>
+  </div>
+</div>
+<div id="alertOverlay" class="alert-overlay">
+  <div class="alert-box">
+    <div class="alert-icon">⚠️</div>
+    <h4 id="alertTitle">Confirm</h4>
+    <p id="alertMessage">Are you sure?</p>
+    
+    <div class="alert-actions">
+      <button class="btn-cancel" id="alertCancel">Cancel</button>
+      <button class="btn-ok" id="alertOk">OK</button>
+    </div>
+  </div>
+</div>
+<audio id="notifySound">
+  <source src="https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3">
+</audio>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-app.js";
+  import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-auth.js";
+  import {
+    getFirestore,
+    collection,
+    getDocs,
+    updateDoc,
+    deleteDoc,
+    doc
+  } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-firestore.js";
+  
+  /* ------------------ FIREBASE ------------------ */
+  const firebaseConfig = {
+    apiKey: "AIzaSyApZK1uKspkk_yu8mCKDH44rDnmJzjvv00",
+    authDomain: "myshop-f7a03.firebaseapp.com",
+    projectId: "myshop-f7a03",
+    storageBucket: "myshop-f7a03.appspot.com",
+    messagingSenderId: "793564064034",
+    appId: "1:793564064034:web:fcc5230ff28a5ee8005d7b"
+  };
+  
+  const app = initializeApp(firebaseConfig);
+  const auth = getAuth(app);
+  const db = getFirestore(app);
+  
+  /* ------------------ AUTH ------------------ */
+  const adminEmails = ["admin@easypointbd.com", "youradmin@gmail.com"];
+  onAuthStateChanged(auth, user => {
+    if (!user || !adminEmails.includes(user.email)) {
+      location.href = "admin-login.html";
+    }
+  });
+  
+  window.logout = () => signOut(auth).then(() => location.href = "admin-login.html");
+  
+  /* ------------------ DATA ------------------ */
+  let orders = [];
+  const tbody = document.getElementById("ordersTable");
+  let loading = false;
+  
+  /* ------------------ LOAD ORDERS ------------------ */
+  async function loadOrders() {
+    if (loading) return;
+    loading = true;
+    
+    tbody.innerHTML = `
+<tr>
+  <td colspan="6" class="text-center">
+    <div class="spinner-border"></div>
+  </td>
+</tr>`;
+    
+    orders = [];
+    const snap = await getDocs(collection(db, "orders"));
+    
+    snap.forEach(d => {
+      const data = d.data();
+      const items = (data.items || []).map(it => ({
+        name: it.name || "Unnamed Product",
+        price: Number(it.price) || 0,
+        quantity: Number(it.quantity) || 1,
+        note: it.note || "No note",
+        image: it.image || ""
+      }));
+      
+      const total = items.reduce((sum, i) => sum + i.price * i.quantity, 0);
+      
+      orders.push({
+        id: d.id,
+        customerName: data.customer || data.customerName || data.name || "Guest",
+        email: data.customerEmail || data.email || "N/A",
+        phone: data.customerPhone || data.phone || "N/A",
+        address: data.customerAddress || data.address || "N/A",
+        total: total,
+        status: data.status || "Pending",
+        date: data.date || "-",
+        items: items
+      });
+    });
+    
+    renderDashboard();
+    loading = false;
+  }
+  
+  /* ------------------ RENDER DASHBOARD ------------------ */
+  function renderDashboard() {
+    tbody.innerHTML = "";
+    
+    let revenue = 0;
+    
+    if (!orders.length) {
+      tbody.innerHTML = `<tr><td colspan="6">No orders found</td></tr>`;
+      totalOrders.innerText = 0;
+      totalRevenue.innerText = "0";
+      return;
+    }
+    
+    let rowsHTML = "";
+    
+    orders.forEach((o, i) => {
+      revenue += o.total;
+      
+      // Show notes under each item when hovering/clicking customer
+      const noteSummary = o.items.map(it => `${it.name} (${it.quantity}×) - ${it.note}`).join("; ");
+      
+      rowsHTML += `
+<tr>
+  <td>${i + 1}</td>
+  <td>
+    <span class="customer-link" onclick="showCustomer(${i})">
+      ${o.customerName}
+    </span>
+  </td>
+  <td>৳${o.total.toFixed(0)}</td>
+  <td>
+    <span class="badge ${o.status === "Confirmed" ? "bg-success" : "bg-warning"}">
+      ${o.status}
+    </span>
+  </td>
+  <td>${o.date}</td>
+  <td>
+    ${o.status === "Pending"
+      ? `<button class="btn btn-sm btn-success" onclick="confirmOrder(${i})">
+           <i class="bi bi-check-circle"></i>
+         </button>` : ""
+    }
+    <button class="btn btn-sm btn-danger" onclick="deleteOrder(${i})">
+      <i class="bi bi-trash"></i>
+    </button>
+  </td>
+</tr>`;
+    });
+    
+    tbody.innerHTML = rowsHTML;
+    totalOrders.innerText = orders.length;
+    totalRevenue.innerText = revenue.toFixed(0);
+  }
+  
+  /* ------------------ PRODUCT MODAL ------------------ */
+  window.showProduct = (name, img) => {
+    productTitle.innerText = name;
+    productImg.src = img;
+    new bootstrap.Modal(productModal).show();
+  };
+  
+  /* ------------------ ORDER ACTIONS ------------------ */
+  window.confirmOrder = async i => {
+    const o = orders[i];
+    await updateDoc(doc(db, "orders", o.id), { status: "Confirmed" });
+    loadOrders();
+    
+    const subject = encodeURIComponent("Order Confirmed - Easypoint BD");
+    const body = encodeURIComponent(
+      `Hello ${o.customerName},\n\n` +
+      `✅ Your order has been CONFIRMED successfully.\n\n` +
+      `Order Total: ৳${o.total.toFixed(2)}\n` +
+      `Order Date: ${o.date}\n\n` +
+      `Thank you for shopping with Easypoint BD!\n\n` +
+      `— Easypoint BD Team`
+    );
+    
+    if (o.email && o.email !== "N/A") {
+      window.open(`mailto:${o.email}?subject=${subject}&body=${body}`, "_blank");
+    }
+  };
+  
+  /* ------------------ DELETE ORDER ------------------ */
+  window.deleteOrder = async i => {
+    customConfirm("Delete this order permanently?", async ok => {
+      if (!ok) return;
+      await deleteDoc(doc(db, "orders", orders[i].id));
+      loadOrders();
+    });
+  };
+  
+  /* ------------------ CUSTOMER MODAL ------------------ */
+  window.showCustomer = i => {
+    const o = orders[i];
+    
+    cName.innerText = o.customerName;
+    cEmail.innerText = o.email;
+    cPhone.innerText = o.phone;
+    cAddress.innerText = o.address;
+    
+    // Show items with quantity, price, and note
+    cItems.innerHTML = o.items.length ?
+      o.items.map(it =>
+        `<li style="cursor:pointer;color:#0d6efd" onclick="showProduct('${it.name}','${it.image}')">
+        ${it.name} × ${it.quantity} - ৳${it.price.toFixed(0)}<br>
+        <small class="text-muted">Note: ${it.note}</small>
+      </li>`).join("") :
+      "<li>No items</li>";
+    
+    new bootstrap.Modal(customerModal).show();
+  };
+  
+  /* ------------------ INIT ------------------ */
+  loadOrders();
+  
+  function customConfirm(message, callback) {
+    const overlay = document.getElementById("alertOverlay");
+    const msg = document.getElementById("alertMessage");
+    
+    msg.innerText = message;
+    overlay.style.display = "flex";
+    
+    document.getElementById("alertOk").onclick = () => {
+      overlay.style.display = "none";
+      callback(true);
+    };
+    
+    document.getElementById("alertCancel").onclick = () => {
+      overlay.style.display = "none";
+      callback(false);
+    };
+  }
+</script>
+
+</body>
+</html>
